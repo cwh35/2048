@@ -68,11 +68,17 @@ class Tile:
             ),
         )
 
-    def setPosition(self):
-        pass
+    def setPosition(self, ceil=False):
+        if ceil:
+            self.row = math.ceil(self.y / RECTANGLE_HEIGHT)
+            self.col = math.ceil(self.x / RECTANGLE_WIDTH)
+        else:
+            self.row = math.floor(self.y / RECTANGLE_HEIGHT)
+            self.col = math.floor(self.x / RECTANGLE_WIDTH)
 
     def move(self, delta):
-        pass
+        self.x += delta[0]
+        self.y += delta[1]
 
 def drawGrid(window):
     # draw horizontal grid lines
@@ -111,6 +117,94 @@ def getRandomPosition(tiles):
 
     return row, col
 
+def moveTiles(window, tiles, clock, direction):
+    updated = True
+    blocks = set() # which tiles have already merged in a movement
+
+    if direction == "left":
+        sortFunction = lambda x: x.col
+        reverse = False # start with the largest column elements, furthest to the right
+        delta = (-MOVE_VELOCITY, 0) # how much we need to move the tiles
+        boundaryCheck = lambda tile: tile.col == 0 # check if the tile is at the boundary
+        getNextTile = lambda tile: tiles.get(f"{tile.row}{tile.col - 1}") # get the next tile in the direction we are moving
+        mergeCheck = lambda tile, nextTile: tile.x > nextTile.x + MOVE_VELOCITY # check if the tiles can merge
+        moveCheck = lambda tile, nextTile: tile.x > nextTile.x + RECTANGLE_WIDTH + MOVE_VELOCITY # check if the tiles can move
+        ceil = True # round up when moving to left
+    elif direction == "right":
+        sortFunction = lambda x: x.col
+        reverse = True 
+        delta = (MOVE_VELOCITY, 0) # how much we need to move the tiles
+        boundaryCheck = lambda tile: tile.col == COLS - 1 # check if the tile is at the boundary
+        getNextTile = lambda tile: tiles.get(f"{tile.row}{tile.col + 1}") # get the next tile in the direction we are moving
+        mergeCheck = lambda tile, nextTile: tile.x < nextTile.x - MOVE_VELOCITY # check if the tiles can merge
+        moveCheck = lambda tile, nextTile: tile.x + RECTANGLE_WIDTH + MOVE_VELOCITY < nextTile.x # check if the tiles can move
+        ceil = False # round down when moving to right
+    elif direction == "up":
+        sortFunction = lambda x: x.row
+        reverse = False
+        delta = (0, -MOVE_VELOCITY) # how much we need to move the tiles
+        boundaryCheck = lambda tile: tile.row == 0 # check if the tile is at the boundary
+        getNextTile = lambda tile: tiles.get(f"{tile.row - 1}{tile.col}") # get the next tile in the direction we are moving
+        mergeCheck = lambda tile, nextTile: tile.y > nextTile.y + MOVE_VELOCITY # check if the tiles can merge
+        moveCheck = lambda tile, nextTile: tile.y > nextTile.y + RECTANGLE_HEIGHT + MOVE_VELOCITY # check if the tiles can move
+        ceil = True # round up when moving up
+    elif direction == "down":
+        sortFunction = lambda x: x.row
+        reverse = True
+        delta = (0, MOVE_VELOCITY) # how much we need to move the tiles
+        boundaryCheck = lambda tile: tile.row == ROWS - 1 # check if the tile is at the boundary
+        getNextTile = lambda tile: tiles.get(f"{tile.row + 1}{tile.col}") # get the next tile in the direction we are moving
+        mergeCheck = lambda tile, nextTile: tile.y < nextTile.y - MOVE_VELOCITY # check if the tiles can merge
+        moveCheck = lambda tile, nextTile: tile.y + RECTANGLE_HEIGHT + MOVE_VELOCITY < nextTile.y # check if the tiles can move
+        ceil = False # round down when moving down
+
+    while updated:
+        clock.tick(FPS)
+        updated = False
+        sortedTiles = sorted(tiles.values(), key=sortFunction, reverse=reverse)
+
+        for i, tile in enumerate(sortedTiles): # get index of tile and tile object itself
+            if boundaryCheck(tile):
+                continue
+            
+            nextTile = getNextTile(tile) # tile in the way of which we want to move
+            if not nextTile:
+                tile.move(delta)
+            elif tile.value == nextTile.value and tile not in blocks and nextTile not in blocks:
+                if mergeCheck(tile, nextTile): # are we in the process of merging?
+                    tile.move(delta)
+                else:
+                    nextTile.value *= 2
+                    sortedTiles.pop(i)
+                    blocks.add(nextTile)
+            elif moveCheck(tile, nextTile):
+                tile.move(delta)
+            else: 
+                continue
+
+            tile.setPosition(ceil)
+            updated = True
+
+        updateTiles(window, tiles, sortedTiles)
+
+    endMove(tiles)
+
+def endMove(tiles):
+    if len(tiles) == 16:
+        return "lost"
+    
+    row, col = getRandomPosition(tiles)
+    tiles[f"{row}{col}"] = Tile(random.choice([2, 4]), row, col)
+    return "continue"
+
+
+def updateTiles(window, tiles, sortedTiles):
+    tiles.clear()
+    for tile in sortedTiles:
+        tiles[f"{tile.row}{tile.col}"] = tile
+
+    draw(window, tiles)
+
 def generateTiles():
     tiles = {}
 
@@ -133,6 +227,16 @@ def main(window):
             if event.type == pygame.QUIT: # if we press the exit button
                 run = False
                 break
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    moveTiles(window, tiles, clock, "left")
+                if event.key == pygame.K_RIGHT:
+                    moveTiles(window, tiles, clock, "right")
+                if event.key == pygame.K_UP:
+                    moveTiles(window, tiles, clock, "up")
+                if event.key == pygame.K_DOWN:
+                    moveTiles(window, tiles, clock, "down")
 
         draw(window, tiles)
 

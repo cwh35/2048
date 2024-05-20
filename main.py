@@ -98,15 +98,33 @@ def draw(window, tiles):
     drawGrid(window)
     pygame.display.update() # update the window
 
+def getRandomPosition(tiles):
+    row = None
+    col = None
+    while True:
+        # pick a random position
+        row = random.randrange(0, ROWS) # generate up to ROWS - 1
+        col = random.randrange(0, COLS)
+
+        if f"{row}{col}" not in tiles:
+            break
+
+    return row, col
+
+def generateTiles():
+    tiles = {}
+
+    for _ in range(2):
+        row, col = getRandomPosition(tiles)
+        tiles[f"{row}{col}"] = Tile(2, row, col)
+
+    return tiles
+
 def main(window):
     clock = pygame.time.Clock() # regulates speed of the loop
     run = True # game loop
 
-    tiles = {
-        "00": Tile(4, 0, 0),
-        "20": Tile(128, 2, 0),
-        "02": Tile(64, 0, 2),
-    }
+    tiles = generateTiles()
 
     while run:
         clock.tick(FPS)

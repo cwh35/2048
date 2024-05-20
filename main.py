@@ -24,6 +24,56 @@ MOVE_VELOCITY = 20 # 20 pixels per second
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT)) # setting the window size
 pygame.display.set_caption("2048") # setting title
 
+class Tile:
+    COLORS = [
+        # these colors are from the actual 2048 game
+        (237, 229, 218),
+        (238, 225, 201),
+        (243, 178, 122),
+        (246, 150, 101),
+        (247, 124, 95),
+        (247, 95, 59),
+        (237, 208, 115),
+        (237, 204, 99),
+        (236, 202, 80),
+    ]
+
+    def __init__(self, value, row, col):
+        self.value = value
+        self.row = row
+        self.col = col
+        self.x = col * RECTANGLE_WIDTH
+        self.y = row * RECTANGLE_HEIGHT
+
+    def getColor(self):
+        # get correct color based on the value of the tile
+        colorIndex = int(math.log2(self.value)) - 1
+        color = self.COLORS[colorIndex]
+
+        return color
+
+    def draw(self, window):
+        # draw the rectangle of the tile, then draw the text on top of the tile
+        color = self.getColor()
+        pygame.draw.rect(window, color, (self.x, self.y, RECTANGLE_WIDTH, RECTANGLE_HEIGHT))
+
+        # this creates a surface that contains the text
+        text = FONT.render(str(self.value), 1, FONT_COLOR) # 1 is for anti-aliasing
+        # where we want to put the text
+        window.blit(
+            text, 
+            (
+            self.x + (RECTANGLE_WIDTH / 2 - text.get_width() / 2),
+            self.y + (RECTANGLE_HEIGHT / 2 - text.get_height() / 2),
+            ),
+        )
+
+    def setPosition(self):
+        pass
+
+    def move(self, delta):
+        pass
+
 def drawGrid(window):
     # draw horizontal grid lines
     for row in range(1, ROWS):
@@ -39,14 +89,24 @@ def drawGrid(window):
     pygame.draw.rect(window, OUTLINE_COLOR, (0, 0, WIDTH, HEIGHT), OUTLINE_THICKNESS) # use outline thickness for a hollow rectangle (not filled in)
     
 
-def draw(window):
+def draw(window, tiles):
     window.fill(BACKGROUND_COLOR) # fill window w/ background color
+
+    for tile in tiles.values():
+        tile.draw(window)
+
     drawGrid(window)
     pygame.display.update() # update the window
 
 def main(window):
     clock = pygame.time.Clock() # regulates speed of the loop
     run = True # game loop
+
+    tiles = {
+        "00": Tile(4, 0, 0),
+        "20": Tile(128, 2, 0),
+        "02": Tile(64, 0, 2),
+    }
 
     while run:
         clock.tick(FPS)
@@ -56,7 +116,7 @@ def main(window):
                 run = False
                 break
 
-        draw(window)
+        draw(window, tiles)
 
     pygame.quit()
 

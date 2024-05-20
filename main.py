@@ -23,3 +23,20 @@ MOVE_VELOCITY = 20 # 20 pixels per second
 
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT)) # setting the window size
 pygame.display.set_caption("2048") # setting title
+
+def main(window):
+    clock = pygame.time.Clock() # regulates speed of the loop
+    run = True # game loop
+
+    while run:
+        clock.tick(FPS)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: # if we press the exit button
+                run = False
+                break
+            
+    pygame.quit()
+
+if __name__ == "__main__":
+    main(WINDOW)

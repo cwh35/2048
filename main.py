@@ -24,6 +24,26 @@ MOVE_VELOCITY = 20 # 20 pixels per second
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT)) # setting the window size
 pygame.display.set_caption("2048") # setting title
 
+def drawGrid(window):
+    # draw horizontal grid lines
+    for row in range(1, ROWS):
+        y = row * RECTANGLE_HEIGHT
+        pygame.draw.line(window, OUTLINE_COLOR, (0, y), (WIDTH, y), OUTLINE_THICKNESS)
+
+    # draw vertical grid lines
+    for col in range(1, COLS):
+        x = col * RECTANGLE_WIDTH
+        pygame.draw.line(window, OUTLINE_COLOR, (x, 0), (x, HEIGHT), OUTLINE_THICKNESS)
+
+    # draw the border
+    pygame.draw.rect(window, OUTLINE_COLOR, (0, 0, WIDTH, HEIGHT), OUTLINE_THICKNESS) # use outline thickness for a hollow rectangle (not filled in)
+    
+
+def draw(window):
+    window.fill(BACKGROUND_COLOR) # fill window w/ background color
+    drawGrid(window)
+    pygame.display.update() # update the window
+
 def main(window):
     clock = pygame.time.Clock() # regulates speed of the loop
     run = True # game loop
@@ -35,7 +55,9 @@ def main(window):
             if event.type == pygame.QUIT: # if we press the exit button
                 run = False
                 break
-            
+
+        draw(window)
+
     pygame.quit()
 
 if __name__ == "__main__":
